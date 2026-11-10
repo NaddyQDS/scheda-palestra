@@ -45,10 +45,11 @@ const SK='gym1sync';let SY={},_pt;try{SY=JSON.parse(localStorage.getItem(SK))||{
 const sySave=()=>{try{localStorage.setItem(SK,JSON.stringify(SY))}catch(e){}};
 const hm=()=>new Date().toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'});
 const save=()=>{D.upd=Date.now();try{localStorage.setItem('gym1',JSON.stringify(D))}catch(e){}if(SY.url){clearTimeout(_pt);_pt=setTimeout(sync,4000)}};
+async function jf(u,o,w){let r,t;try{r=await fetch(u,o);t=await r.text()}catch(e){throw new Error(w+': rete/CORS ('+e.name+': '+e.message+')')}try{return JSON.parse(t)}catch(e){throw new Error(w+': risposta non JSON, HTTP '+r.status+' «'+t.replace(/<[^>]*>/g,' ').replace(/\s+/g,' ').slice(0,150)+'»')}}
 async function sync(m){if(!SY.url)return;const st=t=>{SY.msg=t;sySave();if(tab=='dati'&&!D.cur)R()};
-try{const r=await fetch(SY.url+'?token='+encodeURIComponent(SY.tok||''),{cache:'no-store'}),j=await r.json();if(j.error)throw new Error(j.error);
+try{const j=await jf(SY.url+'?token='+encodeURIComponent(SY.tok||''),{cache:'no-store'},'lettura');if(j.error)throw new Error('lettura, risposta del server: '+j.error);
 if(j.data&&(!SY.init||j.upd>(D.upd||0))){const cur=D.cur;D=j.data;D.cur=cur||null;D.ses=D.ses||[];D.body=D.body||[];D.car=D.car||[];D.upd=j.upd;try{localStorage.setItem('gym1',JSON.stringify(D))}catch(e){}if(D.plan)applyPlan(D.plan);SY.init=1;st('Scaricato da Drive alle '+hm());if(!D.cur)R();if(m)alert('Dati scaricati da Drive');return}
-if(!j.data||(D.upd||0)>j.upd){D.upd=D.upd||Date.now();const q={...D};delete q.cur;const w=await fetch(SY.url,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({token:SY.tok,upd:D.upd,data:q})}),k=await w.json();if(k.error)throw new Error(k.error);SY.init=1;st('Salvato su Drive alle '+hm());if(m)alert('Sincronizzato con Drive');return}
+if(!j.data||(D.upd||0)>j.upd){D.upd=D.upd||Date.now();const q={...D};delete q.cur;const k=await jf(SY.url,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({token:SY.tok,upd:D.upd,data:q})},'scrittura');if(k.error)throw new Error('scrittura, risposta del server: '+k.error);SY.init=1;st('Salvato su Drive alle '+hm());if(m)alert('Sincronizzato con Drive');return}
 SY.init=1;st('Già aggiornato ('+hm()+')');if(m)alert('Già aggiornato')}catch(e){st('Errore: '+e.message);if(m)alert('Sincronizzazione non riuscita: '+e.message)}}
 function syCfg(){SY.url=$('#su').value.trim();SY.tok=$('#st').value.trim();SY.init=0;sySave();sync(1)}
 // nome, ripetizioni, carico iniziale, incremento per serie, per lato, alternativa
